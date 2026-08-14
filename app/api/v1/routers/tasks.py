@@ -1,4 +1,6 @@
 import uuid
+from datetime import datetime
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -18,8 +20,14 @@ def create_task(data: TaskCreate, db: Session = Depends(get_db)) -> Task:
 
 
 @router.get("", response_model=list[Task])
-def list_tasks(db: Session = Depends(get_db)) -> list[Task]:
-    return crud.list_tasks(db)
+def list_tasks(
+    due_after: datetime | None = None,
+    due_before: datetime | None = None,
+    sort: Literal["due_at"] | None = None,
+    order: Literal["asc", "desc"] = "asc",
+    db: Session = Depends(get_db),
+) -> list[Task]:
+    return crud.list_tasks(db, due_after=due_after, due_before=due_before, sort=sort, order=order)
 
 
 @router.get("/{task_id}", response_model=Task, responses=NOT_FOUND_RESPONSE)

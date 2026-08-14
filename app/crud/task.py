@@ -28,6 +28,7 @@ def create_task(db: Session, data: TaskCreate) -> Task:
         title=data.title,
         description=data.description,
         status=data.status,
+        due_at=data.due_at,
         created_at=now,
         updated_at=now,
     )
@@ -37,8 +38,22 @@ def create_task(db: Session, data: TaskCreate) -> Task:
     return task
 
 
-def list_tasks(db: Session) -> list[Task]:
-    stmt = select(Task).order_by(Task.created_at.asc())
+def list_tasks(
+    db: Session,
+    due_after: datetime | None = None,
+    due_before: datetime | None = None,
+    sort: str | None = None,
+    order: str = "asc",
+) -> list[Task]:
+    stmt = select(Task)
+    if due_after is not None:
+        stmt = stmt.where(Task.due_at >= due_after)
+    if due_before is not None:
+        stmt = stmt.where(Task.due_at <= due_before)
+    if sort == "due_at":
+        stmt = stmt.order_by(Task.due_at.desc() if order == "desc" else Task.due_at.asc())
+    else:
+        stmt = stmt.order_by(Task.created_at.asc())
     return list(db.scalars(stmt).all())
 
 
