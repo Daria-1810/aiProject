@@ -23,7 +23,14 @@ def _next_timestamp(previous: datetime) -> datetime:
 
 
 def create_task(db: Session, data: TaskCreate) -> Task:
-    task = Task(title=data.title, description=data.description, status=data.status)
+    now = _utcnow()
+    task = Task(
+        title=data.title,
+        description=data.description,
+        status=data.status,
+        created_at=now,
+        updated_at=now,
+    )
     db.add(task)
     db.commit()
     db.refresh(task)
