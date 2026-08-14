@@ -43,6 +43,36 @@ paths:
       tags: [tasks]
       summary: Получить список задач
       operationId: listTasks
+      parameters:
+        - name: due_after
+          in: query
+          required: false
+          description: Вернуть задачи с due_at не раньше указанного момента
+          schema:
+            type: string
+            format: date-time
+        - name: due_before
+          in: query
+          required: false
+          description: Вернуть задачи с due_at не позже указанного момента
+          schema:
+            type: string
+            format: date-time
+        - name: sort
+          in: query
+          required: false
+          description: Поле сортировки (поддерживается только due_at)
+          schema:
+            type: string
+            enum: [due_at]
+        - name: order
+          in: query
+          required: false
+          description: Направление сортировки
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
       responses:
         '200':
           description: Список задач
@@ -159,6 +189,10 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/TaskStatus'
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -187,6 +221,11 @@ components:
           allOf:
             - $ref: '#/components/schemas/TaskStatus'
           default: todo
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Если указано, должно быть не раньше текущего момента
       required:
         - title
 
@@ -203,6 +242,11 @@ components:
           nullable: true
         status:
           $ref: '#/components/schemas/TaskStatus'
+        due_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Явный null снимает дедлайн; при непустом значении должно быть не раньше текущего момента
 
     HTTPError:
       type: object
