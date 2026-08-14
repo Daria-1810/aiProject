@@ -1,0 +1,241 @@
+openapi: 3.0.3
+info:
+  title: TODO REST API
+  description: >
+    REST API для управления задачами (TODO) в single-user режиме, без аутентификации.
+    Спецификация сгенерирована на основе docs/spec.md.
+  version: "1.0.0"
+
+servers:
+  - url: /api/v1
+
+tags:
+  - name: tasks
+    description: Операции над задачами
+
+paths:
+  /tasks:
+    post:
+      tags: [tasks]
+      summary: Создать задачу
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '201':
+          description: Задача создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '422':
+          description: Ошибка валидации входных данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+    get:
+      tags: [tasks]
+      summary: Получить список задач
+      operationId: listTasks
+      responses:
+        '200':
+          description: Список задач
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+
+  /tasks/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: UUID задачи
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [tasks]
+      summary: Получить задачу по id
+      operationId: getTask
+      responses:
+        '200':
+          description: Задача найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+        '422':
+          description: Некорректный формат id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+    patch:
+      tags: [tasks]
+      summary: Частично обновить задачу
+      operationId: updateTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Задача обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+        '422':
+          description: Ошибка валидации входных данных
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+    delete:
+      tags: [tasks]
+      summary: Удалить задачу
+      operationId: deleteTask
+      responses:
+        '204':
+          description: Задача удалена
+        '404':
+          description: Задача не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+        '422':
+          description: Некорректный формат id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+
+components:
+  schemas:
+    TaskStatus:
+      type: string
+      enum: [todo, in_progress, done]
+
+    Task:
+      type: object
+      description: Задача (ответ API)
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - status
+        - created_at
+        - updated_at
+
+    TaskCreate:
+      type: object
+      description: Тело запроса на создание задачи
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        status:
+          allOf:
+            - $ref: '#/components/schemas/TaskStatus'
+          default: todo
+      required:
+        - title
+
+    TaskUpdate:
+      type: object
+      description: Тело запроса на частичное обновление задачи (PATCH) — все поля опциональны
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/TaskStatus'
+
+    HTTPError:
+      type: object
+      description: Стандартная ошибка FastAPI
+      properties:
+        detail:
+          type: string
+      required:
+        - detail
+
+    ValidationError:
+      type: object
+      properties:
+        loc:
+          type: array
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+        msg:
+          type: string
+        type:
+          type: string
+      required:
+        - loc
+        - msg
+        - type
+
+    HTTPValidationError:
+      type: object
+      description: Стандартная структура ошибок валидации FastAPI/Pydantic
+      properties:
+        detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
